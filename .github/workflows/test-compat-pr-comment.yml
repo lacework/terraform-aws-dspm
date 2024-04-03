@@ -2,8 +2,8 @@ name: Test Compatibility On Comment
 
 on: 
   workflow_dispatch:
-  issue_comment:                                     
-    types: [created, edited]
+  # issue_comment:                                     
+  #   types: [created, edited]
 
 jobs:
   check-commenting-user:
