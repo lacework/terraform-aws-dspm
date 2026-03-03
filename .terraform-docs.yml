@@ -1,0 +1,45 @@
+formatter: markdown table
+version: "0.16.0"
+
+sections:
+  show:
+    - requirements
+    - providers
+    - inputs
+    - outputs
+
+content: |-
+  # Terraform AWS DSPM Module
+
+  Terraform module for integrating AWS Data Security Posture Management (DSPM) with Lacework.
+
+  This module creates the necessary AWS resources for DSPM scanning, including:
+  - Lacework cloud account integration
+  - ECS Cluster on AWS Fargate for scanner tasks
+  - EventBridge Rule for scheduled scanning
+  - S3 bucket for scan results
+  - Secret Manager secret for Lacework credentials
+  - DynamoDB table for scanner cache
+  - VPC and networking configuration
+  - Required IAM roles and policies
+
+  ## Usage Examples
+  See the [examples/](./examples/) directory for complete usage examples.
+
+  {{ .Requirements }}
+
+  {{ .Providers }}
+
+  {{ .Inputs }}
+
+  {{ .Outputs }}
+
+output:
+  file: README.md
+  mode: replace
+
+settings:
+  anchor: false
+  default: true
+  required: true
+  type: true
