@@ -8,4 +8,6 @@ on:
 jobs:
   call-nightly-workflow:
     uses: lacework/oss-actions/.github/workflows/tf-nightly.yml@main
+    with:
+      use-custom-aws-creds: true
     secrets: inherit
