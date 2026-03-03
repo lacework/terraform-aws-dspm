@@ -10,16 +10,5 @@ terraform {
       source  = "lacework/lacework"
       version = "~> 2.2"
     }
-    time = {
-      source  = "hashicorp/time"
-      version = "~> 0.9"
-    }
   }
 }
-
-provider "aws" {
-  region = local.global_region
-}
-
-# Data source to get current AWS account ID
-data "aws_caller_identity" "current" {}
