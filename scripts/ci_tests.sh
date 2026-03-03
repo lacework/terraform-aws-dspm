@@ -6,10 +6,11 @@
 #
 set -eou pipefail
 
-readonly project_name=terraform-<PROVIDER>-<NAME>
+readonly project_name=terraform-aws-dspm
 
 TEST_CASES=(
-  examples/default
+  examples/account-level-single-region
+  examples/account-level-multi-region
 )
 
 log() {
