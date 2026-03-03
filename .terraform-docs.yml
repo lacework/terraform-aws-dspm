@@ -24,8 +24,7 @@ content: |-
   - Required IAM roles and policies
 
   ## Usage Examples
-  - [Account-level Single Region](./examples/account-level-single-region/)
-  - [Account-level Multi Region](./examples/account-level-multi-region/)
+  See the [examples/](./examples/) directory for complete usage examples.
 
   {{ .Requirements }}
 

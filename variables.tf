@@ -84,7 +84,7 @@ variable "scanning_account_id" {
 variable "additional_trusted_role_arns" {
   type        = list(string)
   default     = []
-  description = "Additional IAM role ARNs allowed to assume the DSPM scan role (e.g. for local debugging)."
+  description = "Additional IAM role ARNs allowed to assume the DSPM scan role (e.g., for testing outside of the scheduled ECS task)."
 }
 
 variable "lacework_aws_account_id" {

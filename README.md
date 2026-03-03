@@ -14,8 +14,7 @@ This module creates the necessary AWS resources for DSPM scanning, including:
 - Required IAM roles and policies
 
 ## Usage Examples
-- [Account-level Single Region](./examples/account-level-single-region/)
-- [Account-level Multi Region](./examples/account-level-multi-region/)
+See the [examples/](./examples/) directory for complete usage examples.
 
 ## Requirements
 
@@ -40,7 +39,7 @@ This module creates the necessary AWS resources for DSPM scanning, including:
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | additional\_environment\_variables | Optional list of additional environment variables passed to the scanner task. | <pre>list(object({<br>    name  = string<br>    value = string<br>  }))</pre> | `[]` | no |
-| additional\_trusted\_role\_arns | Additional IAM role ARNs allowed to assume the DSPM scan role (e.g. for local debugging). | `list(string)` | `[]` | no |
+| additional\_trusted\_role\_arns | Additional IAM role ARNs allowed to assume the DSPM scan role (e.g., for testing outside of the scheduled ECS task). | `list(string)` | `[]` | no |
 | ecs\_task\_cpu | CPU units for ECS task (256, 512, 1024, 2048, 4096) | `number` | `1024` | no |
 | ecs\_task\_memory | Memory for ECS task in MB (512, 1024, 2048, 4096, 8192, etc.) | `number` | `2048` | no |
 | global\_region | Region for global resources (S3 bucket, etc). Defaults to first region in var.regions. | `string` | `""` | no |

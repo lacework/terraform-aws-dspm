@@ -1,3 +1,5 @@
+# Configure the Lacework provider.
+# See: https://registry.terraform.io/providers/lacework/lacework/latest/docs
 provider "lacework" {
   profile = "default"
 }
