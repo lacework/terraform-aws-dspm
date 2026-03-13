@@ -22,7 +22,7 @@ See the [examples/](./examples/) directory for complete usage examples.
 |------|---------|
 | terraform | >= 1.3 |
 | aws | ~> 6.0 |
-| lacework | ~> 2.2 |
+| lacework | 99.0.0 |
 | time | ~> 0.9 |
 
 ## Providers
@@ -30,7 +30,7 @@ See the [examples/](./examples/) directory for complete usage examples.
 | Name | Version |
 |------|---------|
 | aws | ~> 6.0 |
-| lacework | ~> 2.2 |
+| lacework | 99.0.0 |
 | random | n/a |
 | time | ~> 0.9 |
 
@@ -40,6 +40,7 @@ See the [examples/](./examples/) directory for complete usage examples.
 |------|-------------|------|---------|:--------:|
 | additional\_environment\_variables | Optional list of additional environment variables passed to the scanner task. | <pre>list(object({<br>    name  = string<br>    value = string<br>  }))</pre> | `[]` | no |
 | additional\_trusted\_role\_arns | Additional IAM role ARNs allowed to assume the DSPM scan role (e.g., for testing outside of the scheduled ECS task). | `list(string)` | `[]` | no |
+| datastore\_filters | Filter which datastores are scanned. filter\_mode must be 'INCLUDE', 'EXCLUDE', or 'ALL'. datastore\_names is required for INCLUDE/EXCLUDE and must not be set for ALL. | <pre>object({<br>    filter_mode     = string<br>    datastore_names = optional(list(string), [])<br>  })</pre> | `null` | no |
 | ecs\_task\_cpu | CPU units for ECS task (256, 512, 1024, 2048, 4096) | `number` | `1024` | no |
 | ecs\_task\_memory | Memory for ECS task in MB (512, 1024, 2048, 4096, 8192, etc.) | `number` | `2048` | no |
 | global\_region | Region for global resources (S3 bucket, etc). Defaults to first region in var.regions. | `string` | `""` | no |
@@ -47,8 +48,10 @@ See the [examples/](./examples/) directory for complete usage examples.
 | lacework\_domain | Lacework domain for API server | `string` | `"lacework.net"` | no |
 | lacework\_hostname | Hostname for the Lacework account (e.g., my-tenant.lacework.net). If not provided, will use the URL associated with the default Lacework CLI profile. | `string` | `""` | no |
 | lacework\_integration\_name | Name of the DSPM integration in FortiCNAPP | `string` | `"aws-dspm"` | no |
+| max\_file\_size\_mb | Maximum file size to scan, in megabytes. Valid values: 1 to 50. | `number` | `null` | no |
 | regions | List of AWS regions where DSPM scanners are deployed. | `list(string)` | n/a | yes |
 | resource\_prefix | Prefix for resource names (also used for S3 bucket name with account ID appended for uniqueness) | `string` | `"forticnapp-dspm"` | no |
+| scan\_frequency\_hours | How often the DSPM scanner runs, in hours. Valid values: 24 (1 day), 72 (3 days), 168 (7 days), 720 (30 days). | `number` | `null` | no |
 | scanner\_image | Docker image for the DSPM scanner | `string` | `"lacework/dspm-scanner:latest"` | no |
 | scanning\_account\_id | AWS Account ID where the DSPM scanner will be deployed | `string` | n/a | yes |
 | tags | Tags to apply to all resources | `map(string)` | <pre>{<br>  "ManagedBy": "terraform"<br>}</pre> | no |
