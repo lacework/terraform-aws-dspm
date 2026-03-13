@@ -48,7 +48,7 @@ See the [examples/](./examples/) directory for complete usage examples.
 | lacework\_domain | Lacework domain for API server | `string` | `"lacework.net"` | no |
 | lacework\_hostname | Hostname for the Lacework account (e.g., my-tenant.lacework.net). If not provided, will use the URL associated with the default Lacework CLI profile. | `string` | `""` | no |
 | lacework\_integration\_name | Name of the DSPM integration in FortiCNAPP | `string` | `"aws-dspm"` | no |
-| max\_file\_size\_mb | Maximum file size to scan, in megabytes. | `number` | `null` | no |
+| max\_file\_size\_mb | Maximum file size to scan, in megabytes. Valid values: 1 to 50. | `number` | `null` | no |
 | regions | List of AWS regions where DSPM scanners are deployed. | `list(string)` | n/a | yes |
 | resource\_prefix | Prefix for resource names (also used for S3 bucket name with account ID appended for uniqueness) | `string` | `"forticnapp-dspm"` | no |
 | scan\_frequency\_hours | How often the DSPM scanner runs, in hours. Valid values: 24 (1 day), 72 (3 days), 168 (7 days), 720 (30 days). | `number` | `null` | no |

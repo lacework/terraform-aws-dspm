@@ -101,7 +101,12 @@ variable "scan_frequency_hours" {
 variable "max_file_size_mb" {
   type        = number
   default     = null
-  description = "Maximum file size to scan, in megabytes."
+  description = "Maximum file size to scan, in megabytes. Valid values: 1 to 50."
+
+  validation {
+    condition     = var.max_file_size_mb == null || (var.max_file_size_mb >= 1 && var.max_file_size_mb <= 50)
+    error_message = "max_file_size_mb must be between 1 and 50."
+  }
 }
 
 variable "datastore_filters" {
