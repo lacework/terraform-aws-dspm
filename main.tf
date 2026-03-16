@@ -265,7 +265,7 @@ resource "aws_subnet" "public" {
   region   = each.value.region
 
   vpc_id                  = aws_vpc.main[each.value.region].id
-  cidr_block              = "10.0.${each.value.index + 1}.0/24"
+  cidr_block              = "10.0.${(each.value.index + 1) * 32}.0/20"
   availability_zone       = data.aws_availability_zones.available[each.value.region].names[each.value.index]
   map_public_ip_on_launch = true
 
