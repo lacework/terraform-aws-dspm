@@ -111,6 +111,39 @@ resource "aws_s3_bucket" "storage" {
   )
 }
 
+# Retention Policies
+resource "aws_s3_bucket_lifecycle_configuration" "results_expiration" {
+  bucket = aws_s3_bucket.storage.id
+
+  rule {
+    id     = "delete-results-after-7-days"
+    status = "Enabled"
+    
+    filter {
+    prefix = "results/"
+    }
+    expiration {
+      days = 7
+    }
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "scratch_expiration" {
+  bucket = aws_s3_bucket.storage.id
+
+  rule {
+    id     = "delete-scratch-after-1-day"
+    status = "Enabled"
+    
+    filter {
+    prefix = "scratch/"
+    }
+    expiration {
+      days = 1
+    }
+  }
+}
+
 # S3 Output Bucket Encryption
 resource "aws_s3_bucket_server_side_encryption_configuration" "storage" {
   bucket = local.storage_bucket_id
@@ -149,6 +182,11 @@ resource "aws_dynamodb_table" "scanner_cache" {
   attribute {
     name = "ObjectName"
     type = "S"
+  }
+
+  ttl {
+    attribute_name = "ExpiresAt"
+    enabled        = true
   }
 
   server_side_encryption {
