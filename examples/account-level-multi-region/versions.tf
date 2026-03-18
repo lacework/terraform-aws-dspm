@@ -8,8 +8,7 @@ terraform {
     }
     lacework = {
       source  = "lacework/lacework"
-      # TODO: set version to "~> 2.3" once the lacework provider is released
-      version = "99.0.0"
+      version = "~> 2.3"
     }
   }
 }

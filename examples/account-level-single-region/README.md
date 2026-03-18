@@ -22,6 +22,30 @@ module "lacework_dspm" {
 }
 ```
 
+Optionally, you can configure scan frequency, maximum file size, and datastore filters:
+```hcl
+module "lacework_dspm" {
+  source  = "lacework/dspm/aws"
+  version = "~> 0.1"
+
+  lacework_integration_name = "aws-dspm"
+  scanning_account_id       = "000000000000"
+  regions                   = ["us-east-2"]
+
+  # How often the DSPM scanner runs (valid values: 24, 72, 168, 720 hours).
+  scan_frequency_hours = 168
+
+  # Maximum file size to scan in MB (valid values: 1-50).
+  max_file_size_mb = 5
+
+  # Control which datastores to scan (filter_mode: INCLUDE, EXCLUDE, or ALL).
+  datastore_filters = {
+    filter_mode     = "INCLUDE"
+    datastore_names = ["my-datastore"]
+  }
+}
+```
+
 A `tags` block can be used to add custom tags to the resources managed by the module. For example:
 ```hcl
 module "lacework_dspm" {
