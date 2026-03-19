@@ -66,6 +66,16 @@ resource "lacework_integration_aws_dspm" "lacework_cloud_account" {
     external_id = local.external_id
     role_arn    = aws_iam_role.dspm_cross_account_role.arn
   }
+  scan_frequency_hours = var.scan_frequency_hours
+  max_file_size_mb     = var.max_file_size_mb
+
+  dynamic "datastore_filters" {
+    for_each = var.datastore_filters != null ? [var.datastore_filters] : []
+    content {
+      filter_mode     = datastore_filters.value.filter_mode
+      datastore_names = length(datastore_filters.value.datastore_names) > 0 ? datastore_filters.value.datastore_names : null
+    }
+  }
 }
 
 # ------------------------------------------------------------
@@ -533,15 +543,15 @@ resource "aws_iam_role" "dspm_scan" {
           AWS = aws_iam_role.ecs_task[each.key].arn
         }
       }
-    ],
-    length(var.additional_trusted_role_arns) > 0 ? [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          AWS = var.additional_trusted_role_arns
+      ],
+      length(var.additional_trusted_role_arns) > 0 ? [
+        {
+          Action = "sts:AssumeRole"
+          Effect = "Allow"
+          Principal = {
+            AWS = var.additional_trusted_role_arns
+          }
         }
-      }
     ] : [])
   })
 
