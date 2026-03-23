@@ -136,11 +136,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "results_expiration" {
       days = 7
     }
   }
-}
-
-resource "aws_s3_bucket_lifecycle_configuration" "scratch_expiration" {
-  bucket = aws_s3_bucket.storage.id
-
   rule {
     id     = "delete-scratch-after-1-day"
     status = "Enabled"
