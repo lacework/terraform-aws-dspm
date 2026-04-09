@@ -28,7 +28,7 @@ variable "ecs_task_cpu" {
 variable "ecs_task_memory" {
   description = "Memory for ECS task in MB (512, 1024, 2048, 4096, 8192, etc.)"
   type        = number
-  default     = 2048
+  default     = 8192
 }
 
 variable "scanner_image" {
