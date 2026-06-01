@@ -20,7 +20,7 @@ See the [examples/](./examples/) directory for complete usage examples.
 
 | Name | Version |
 |------|---------|
-| terraform | >= 1.3 |
+| terraform | >= 1.7 |
 | aws | ~> 6.0 |
 | lacework | ~> 2.3 |
 | time | ~> 0.9 |
