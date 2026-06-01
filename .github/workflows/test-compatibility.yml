@@ -12,4 +12,5 @@ jobs:
     uses: lacework/oss-actions/.github/workflows/tf-test-compatibility.yml@main
     with:
       use-custom-aws-creds: true
+      min-version: 1.7
     secrets: inherit
