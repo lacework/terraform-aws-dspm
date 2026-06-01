@@ -581,11 +581,6 @@ resource "aws_iam_role_policy" "dspm_scan" {
         ]
         Resource = "*"
       },
-      # Decrypt SSE-KMS objects in source buckets. S3 invokes kms:Decrypt as
-      # the calling principal when serving objects encrypted with a
-      # customer-managed key, so s3:GetObject alone is not sufficient. Scoped
-      # to S3 via the kms:ViaService condition so the role can only use keys
-      # through S3, not call KMS directly.
       {
         Effect = "Allow"
         Action = [
