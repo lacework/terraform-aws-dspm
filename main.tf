@@ -62,6 +62,20 @@ resource "lacework_integration_aws_dspm" "lacework_cloud_account" {
   account_id         = var.scanning_account_id
   storage_bucket_arn = local.storage_bucket_arn
   regions            = var.regions
+
+  # Org-level fields. Uncomment once the lacework provider/go-sdk add the
+  # attributes (concurrent work). TF input -> go-sdk prop -> props.DSPM key:
+  #   integration_level  -> integrationLevel  -> INTEGRATION_LEVEL   (org|account)
+  #   monitored_accounts -> monitoredAccounts -> MONITORED_ACCOUNTS  (account IDs / OU IDs)
+  #   management_account -> managementAccount -> MANAGEMENT_ACCOUNT
+  #   included_accounts  -> includedAccounts  -> INCLUDED_ACCOUNTS
+  #   excluded_accounts  -> excludedAccounts  -> EXCLUDED_ACCOUNTS
+  # integration_level  = var.integration_level
+  # monitored_accounts = var.monitored_accounts
+  # management_account = var.management_account
+  # included_accounts  = var.included_accounts
+  # excluded_accounts  = var.excluded_accounts
+
   credentials {
     external_id = local.external_id
     role_arn    = aws_iam_role.dspm_cross_account_role.arn

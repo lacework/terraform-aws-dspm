@@ -138,3 +138,43 @@ variable "lacework_aws_account_id" {
   default     = "434813966438"
   description = "The Lacework AWS account that the IAM role will grant access."
 }
+
+# ------------------------------------------------------------
+# Org-level integration (AWS).
+# Per the agreed per-cloud vernacular, AWS uses org/account here; Azure uses
+# tenant/subscription. The scanner normalizes both to ORG/ACCOUNT internally.
+# ------------------------------------------------------------
+
+variable "integration_level" {
+  type        = string
+  default     = "account"
+  description = "Scope of the DSPM integration: 'org' to scan the whole AWS organization, or 'account' for the single scanning account."
+  validation {
+    condition     = contains(["org", "account"], lower(var.integration_level))
+    error_message = "integration_level must be 'org' or 'account'."
+  }
+}
+
+variable "monitored_accounts" {
+  type        = list(string)
+  default     = []
+  description = "Org-level only. AWS account IDs and/or OU IDs (ou-…/r-…) defining the scan scope. Empty (with integration_level='org') means the whole organization. Ignored for account-level."
+}
+
+variable "management_account" {
+  type        = string
+  default     = ""
+  description = "Org-level only. The AWS Organizations management account ID, used to enumerate the org's accounts/OUs."
+}
+
+variable "included_accounts" {
+  type        = list(string)
+  default     = []
+  description = "Org-level only. If set, scan exactly these account IDs (skips org discovery). Mutually exclusive with excluded_accounts."
+}
+
+variable "excluded_accounts" {
+  type        = list(string)
+  default     = []
+  description = "Org-level only. Account IDs to exclude from a discovered org scan."
+}
