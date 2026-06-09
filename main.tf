@@ -68,13 +68,20 @@ resource "lacework_integration_aws_dspm" "lacework_cloud_account" {
   #   integration_level  -> integrationLevel  -> INTEGRATION_LEVEL   (org|account)
   #   monitored_accounts -> monitoredAccounts -> MONITORED_ACCOUNTS  (account IDs / OU IDs)
   #   management_account -> managementAccount -> MANAGEMENT_ACCOUNT
-  #   included_accounts  -> includedAccounts  -> INCLUDED_ACCOUNTS
-  #   excluded_accounts  -> excludedAccounts  -> EXCLUDED_ACCOUNTS
   # integration_level  = var.integration_level
   # monitored_accounts = var.monitored_accounts
   # management_account = var.management_account
-  # included_accounts  = var.included_accounts
-  # excluded_accounts  = var.excluded_accounts
+  #
+  # accounts_filter is a nested block mirroring datastore_filters. It maps
+  #   accounts_filter{mode, accounts} -> accountFilters{filterMode, accounts}
+  #   -> props.DSPM.ACCOUNT_FILTERS{FILTER_MODE, ACCOUNTS}:
+  # dynamic "accounts_filter" {
+  #   for_each = var.accounts_filter != null ? [var.accounts_filter] : []
+  #   content {
+  #     mode     = accounts_filter.value.mode
+  #     accounts = accounts_filter.value.accounts
+  #   }
+  # }
 
   credentials {
     external_id = local.external_id

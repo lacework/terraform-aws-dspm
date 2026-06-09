@@ -167,14 +167,15 @@ variable "management_account" {
   description = "Org-level only. The AWS Organizations management account ID, used to enumerate the org's accounts/OUs."
 }
 
-variable "included_accounts" {
-  type        = list(string)
-  default     = []
-  description = "Org-level only. If set, scan exactly these account IDs (skips org discovery). Mutually exclusive with excluded_accounts."
-}
-
-variable "excluded_accounts" {
-  type        = list(string)
-  default     = []
-  description = "Org-level only. Account IDs to exclude from a discovered org scan."
+variable "accounts_filter" {
+  type = object({
+    mode     = string
+    accounts = optional(list(string), [])
+  })
+  default     = null
+  description = "Org-level only. Scopes which accounts an org scan covers, mirroring datastore_filters. mode='include' scans exactly the listed accounts (skips org discovery); 'exclude' scans all discovered accounts except those listed; 'all' scans everything discovered."
+  validation {
+    condition     = var.accounts_filter == null ? true : contains(["include", "exclude", "all"], lower(var.accounts_filter.mode))
+    error_message = "accounts_filter.mode must be 'include', 'exclude', or 'all'."
+  }
 }
