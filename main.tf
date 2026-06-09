@@ -54,6 +54,59 @@ locals {
       ]
     }
   ] : []
+
+  /* Canonical CloudFormation template for the per-account member read-role,
+  exposed via the member_role_cfn_template output. An org-level deployment deploys
+  it across the org with a SERVICE_MANAGED StackSet from the management account
+  (the StackSet resource itself can't live here — this module uses the single
+  scanning-account provider). Trust + permissions are baked from this module's
+  scan roles, so the role definition stays canonical to the module (like the
+  scan-role policy) rather than being re-specified per deployment. */
+  member_role_cfn_template = jsonencode({
+    AWSTemplateFormatVersion = "2010-09-09"
+    Description              = "FortiCNAPP DSPM member read-only S3 role"
+    Resources = {
+      DspmMemberRole = {
+        Type = "AWS::IAM::Role"
+        Properties = {
+          RoleName = var.member_role_name
+          AssumeRolePolicyDocument = {
+            Version = "2012-10-17"
+            Statement = [{
+              Effect    = "Allow"
+              Principal = { AWS = "arn:aws:iam::${var.scanning_account_id}:root" }
+              Action    = "sts:AssumeRole"
+              # Only this account's per-region DSPM scan roles may assume it.
+              Condition = {
+                ArnLike = {
+                  "aws:PrincipalArn" = "arn:aws:iam::${var.scanning_account_id}:role/${local.prefix}-scan-role-*-${local.suffix}"
+                }
+              }
+            }]
+          }
+          Policies = [{
+            PolicyName = "dspm-s3-read"
+            PolicyDocument = {
+              Version = "2012-10-17"
+              Statement = [{
+                Effect = "Allow"
+                Action = [
+                  "s3:ListAllMyBuckets",
+                  "s3:GetBucketLocation",
+                  "s3:GetBucketPublicAccessBlock",
+                  "s3:GetBucketPolicyStatus",
+                  "s3:GetBucketAcl",
+                  "s3:ListBucket",
+                  "s3:GetObject",
+                ]
+                Resource = "*"
+              }]
+            }
+          }]
+        }
+      }
+    }
+  })
 }
 
 resource "random_id" "suffix" {
