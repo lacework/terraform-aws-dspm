@@ -43,6 +43,18 @@ output "dspm_scan_role_arns" {
   value       = { for r, role in aws_iam_role.dspm_scan : r => role.arn }
 }
 
+# Org-level: the member-role StackSet trusts the scan roles by ARN pattern
+# (arn:aws:iam::<scanning>:role/<prefix>-scan-role-*-<suffix>), built from these.
+output "resource_prefix" {
+  description = "Prefix used for scanner resource names (scan roles, etc.)"
+  value       = local.prefix
+}
+
+output "resource_suffix" {
+  description = "Random suffix appended to scanner resource names"
+  value       = local.suffix
+}
+
 output "ecs_task_role_arns" {
   description = "Map of region to ECS task role ARN"
   value       = { for r, role in aws_iam_role.ecs_task : r => role.arn }

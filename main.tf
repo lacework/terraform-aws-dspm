@@ -40,6 +40,20 @@ locals {
   }
   */
   subnet_map = { for s in local.subnet_pairs : s.map_key => s }
+
+  /* Org-level only: let the scan role assume the per-account member read-roles
+  (deployed across the org via StackSet) and the management-account org-read role.
+  Empty for account-level so the scan policy is unchanged there. */
+  dspm_scan_org_statements = lower(var.integration_level) == "org" ? [
+    {
+      Effect = "Allow"
+      Action = "sts:AssumeRole"
+      Resource = [
+        "arn:aws:iam::*:role/${var.member_role_name}",
+        "arn:aws:iam::*:role/${var.org_read_role_name}",
+      ]
+    }
+  ] : []
 }
 
 resource "random_id" "suffix" {
@@ -588,7 +602,7 @@ resource "aws_iam_role_policy" "dspm_scan" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
+    Statement = concat([
       {
         Effect = "Allow"
         Action = [
@@ -664,7 +678,7 @@ resource "aws_iam_role_policy" "dspm_scan" {
           aws_ecs_task_definition.scanner[each.key].task_role_arn
         ]
       }
-    ]
+    ], local.dspm_scan_org_statements)
   })
 }
 

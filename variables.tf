@@ -167,6 +167,18 @@ variable "management_account" {
   description = "Org-level only. The AWS Organizations management account ID, used to enumerate the org's accounts/OUs."
 }
 
+variable "member_role_name" {
+  type        = string
+  default     = "forticnapp-dspm-member-role"
+  description = "Org-level only. Name of the read-only role deployed in each monitored account (via StackSet). The scan role is granted sts:AssumeRole on arn:aws:iam::*:role/<member_role_name>."
+}
+
+variable "org_read_role_name" {
+  type        = string
+  default     = "forticnapp-dspm-org-read-role"
+  description = "Org-level only. Name of the org-enumeration role in the management account. The scan role is granted sts:AssumeRole on it for Organizations List*/Describe* during discovery."
+}
+
 variable "accounts_filter" {
   type = object({
     mode     = string
