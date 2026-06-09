@@ -155,12 +155,6 @@ variable "integration_level" {
   }
 }
 
-variable "monitored_accounts" {
-  type        = list(string)
-  default     = []
-  description = "Org-level only. AWS account IDs and/or OU IDs (ou-…/r-…) defining the scan scope. Empty (with integration_level='org') means the whole organization. Ignored for account-level."
-}
-
 variable "management_account" {
   type        = string
   default     = ""
@@ -185,7 +179,7 @@ variable "accounts_filter" {
     accounts = optional(list(string), [])
   })
   default     = null
-  description = "Org-level only. Scopes which accounts an org scan covers, mirroring datastore_filters. mode='include' scans exactly the listed accounts (skips org discovery); 'exclude' scans all discovered accounts except those listed; 'all' scans everything discovered."
+  description = "Org-level only. Scopes which accounts an org scan covers, mirroring datastore_filters. `accounts` entries may be AWS account IDs and/or OU/root IDs (ou-…/r-…); OUs are expanded to their member accounts at scan time (so new accounts in a monitored OU are picked up automatically). mode='include' scans exactly that scope (skips whole-org discovery); 'exclude' scans the whole org except that scope; 'all' scans everything discovered."
   validation {
     condition     = var.accounts_filter == null ? true : contains(["include", "exclude", "all"], lower(var.accounts_filter.mode))
     error_message = "accounts_filter.mode must be 'include', 'exclude', or 'all'."

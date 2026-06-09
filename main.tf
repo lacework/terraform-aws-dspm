@@ -133,10 +133,8 @@ resource "lacework_integration_aws_dspm" "lacework_cloud_account" {
   # Org-level fields. Uncomment once the lacework provider/go-sdk add the
   # attributes (concurrent work). TF input -> go-sdk prop -> props.DSPM key:
   #   integration_level  -> integrationLevel  -> INTEGRATION_LEVEL   (org|account)
-  #   monitored_accounts -> monitoredAccounts -> MONITORED_ACCOUNTS  (account IDs / OU IDs)
   #   management_account -> managementAccount -> MANAGEMENT_ACCOUNT
   # integration_level  = var.integration_level
-  # monitored_accounts = var.monitored_accounts
   # management_account = var.management_account
   #
   # accounts_filter is a nested block mirroring datastore_filters. It maps
