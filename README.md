@@ -38,17 +38,22 @@ See the [examples/](./examples/) directory for complete usage examples.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| accounts\_filter | Org-level only. Scopes which accounts an org scan covers, mirroring datastore\_filters. `accounts` entries may be AWS account IDs and/or OU/root IDs (ou-…/r-…); OUs are expanded to their member accounts at scan time (so new accounts in a monitored OU are picked up automatically). mode='include' scans exactly that scope (skips whole-org discovery); 'exclude' scans the whole org except that scope; 'all' scans everything discovered. | <pre>object({<br>    mode     = string<br>    accounts = optional(list(string), [])<br>  })</pre> | `null` | no |
 | additional\_environment\_variables | Optional list of additional environment variables passed to the scanner task. | <pre>list(object({<br>    name  = string<br>    value = string<br>  }))</pre> | `[]` | no |
 | additional\_trusted\_role\_arns | Additional IAM role ARNs allowed to assume the DSPM scan role (e.g., for testing outside of the scheduled ECS task). | `list(string)` | `[]` | no |
 | datastore\_filters | Filter which datastores are scanned. filter\_mode must be 'INCLUDE', 'EXCLUDE', or 'ALL'. datastore\_names is required for INCLUDE/EXCLUDE and must not be set for ALL. | <pre>object({<br>    filter_mode     = string<br>    datastore_names = optional(list(string), [])<br>  })</pre> | `null` | no |
 | ecs\_task\_cpu | CPU units for ECS task (256, 512, 1024, 2048, 4096) | `number` | `1024` | no |
 | ecs\_task\_memory | Memory for ECS task in MB (512, 1024, 2048, 4096, 8192, etc.) | `number` | `8192` | no |
 | global\_region | Region for global resources (S3 bucket, etc). Defaults to first region in var.regions. | `string` | `""` | no |
+| integration\_level | Scope of the DSPM integration: 'org' to scan the whole AWS organization, or 'account' for the single scanning account. | `string` | `"account"` | no |
 | lacework\_aws\_account\_id | The Lacework AWS account that the IAM role will grant access. | `string` | `"434813966438"` | no |
 | lacework\_domain | Lacework domain for API server | `string` | `"lacework.net"` | no |
 | lacework\_hostname | Hostname for the Lacework account (e.g., my-tenant.lacework.net). If not provided, will use the URL associated with the default Lacework CLI profile. | `string` | `""` | no |
 | lacework\_integration\_name | Name of the DSPM integration in FortiCNAPP | `string` | `"aws-dspm"` | no |
+| management\_account | Org-level only. The AWS Organizations management account ID, used to enumerate the org's accounts/OUs. | `string` | `""` | no |
 | max\_file\_size\_mb | Maximum file size to scan, in megabytes. Valid values: 1 to 50. | `number` | `null` | no |
+| member\_role\_name | Org-level only. Name of the read-only role deployed in each monitored account (via StackSet). The scan role is granted sts:AssumeRole on arn:aws:iam::*:role/<member\_role\_name>. | `string` | `"forticnapp-dspm-member-role"` | no |
+| org\_read\_role\_name | Org-level only. Name of the org-enumeration role in the management account. The scan role is granted sts:AssumeRole on it for Organizations List*/Describe* during discovery. | `string` | `"forticnapp-dspm-org-read-role"` | no |
 | regions | List of AWS regions where DSPM scanners are deployed. | `list(string)` | n/a | yes |
 | resource\_prefix | Prefix for resource names (also used for S3 bucket name with account ID appended for uniqueness) | `string` | `"forticnapp-dspm"` | no |
 | scan\_frequency\_hours | How often the DSPM scanner runs, in hours. Valid values: 24 (1 day), 72 (3 days), 168 (7 days), 720 (30 days). | `number` | `null` | no |
@@ -71,8 +76,11 @@ See the [examples/](./examples/) directory for complete usage examples.
 | lacework\_hostname | Lacework hostname for the integration (e.g., my-tenant.lacework.net) |
 | lacework\_integration\_id | ID of the FortiCNAPP DSPM integration |
 | lacework\_integration\_name | Name of the Lacework DSPM integration |
+| member\_role\_cfn\_template | CloudFormation template (JSON) for the per-account member read-role. Deploy org-wide via a SERVICE\_MANAGED StackSet from the management account; trust is scoped to this deployment's scan roles. |
 | output\_bucket\_arn | ARN of the S3 output bucket |
 | output\_bucket\_name | Name of the S3 output bucket (for scan results) |
+| resource\_prefix | Prefix used for scanner resource names (scan roles, etc.) |
+| resource\_suffix | Random suffix appended to scanner resource names |
 | scanning\_account\_id | AWS Account ID being scanned |
 | secret\_arns | Map of region to DSPM scan secret ARN |
 | security\_group\_ids | Map of region to security group ID for ECS tasks |
