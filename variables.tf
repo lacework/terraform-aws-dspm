@@ -174,27 +174,17 @@ variable "org_read_role_name" {
 }
 
 variable "included_accounts" {
-  type        = set(string)
-  default     = []
+  type    = set(string)
+  default = []
+  # NOTE: "org-level only" and "mutually exclusive with excluded_accounts" are
+  # enforced by lifecycle preconditions on the integration resource in main.tf —
+  # not variable validation, which can't reference other variables until TF 1.9
+  # (this module floors at >= 1.3).
   description = "OPTIONAL: Org-level only. The explicit set of accounts to scan — AWS account IDs and/or OU/root IDs (ou-…/r-…), where OUs are expanded to their member accounts at scan time (so new accounts in a monitored OU are picked up automatically). When empty, all accounts in the org are scanned. Mutually exclusive with excluded_accounts."
-
-  validation {
-    condition     = length(var.included_accounts) == 0 || upper(var.integration_level) == "ORG"
-    error_message = "included_accounts can only be specified when integration_level == 'org'."
-  }
-  validation {
-    condition     = length(var.included_accounts) == 0 || length(var.excluded_accounts) == 0
-    error_message = "included_accounts and excluded_accounts are mutually exclusive."
-  }
 }
 
 variable "excluded_accounts" {
   type        = set(string)
   default     = []
   description = "OPTIONAL: Org-level only. Accounts to exclude from scanning — AWS account IDs and/or OU/root IDs (ou-…/r-…), expanded at scan time. All other accounts in the org are scanned. Mutually exclusive with included_accounts."
-
-  validation {
-    condition     = length(var.excluded_accounts) == 0 || upper(var.integration_level) == "ORG"
-    error_message = "excluded_accounts can only be specified when integration_level == 'org'."
-  }
 }

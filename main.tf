@@ -181,6 +181,20 @@ resource "lacework_integration_aws_dspm" "lacework_cloud_account" {
       datastore_names = length(datastore_filters.value.datastore_names) > 0 ? datastore_filters.value.datastore_names : null
     }
   }
+
+  # Account-filter guardrails. These live here (not in variable validation)
+  # because cross-variable references in validation blocks require Terraform 1.9+
+  # and this module supports >= 1.3.
+  lifecycle {
+    precondition {
+      condition     = length(var.included_accounts) == 0 || length(var.excluded_accounts) == 0
+      error_message = "included_accounts and excluded_accounts are mutually exclusive — set at most one."
+    }
+    precondition {
+      condition     = (length(var.included_accounts) == 0 && length(var.excluded_accounts) == 0) || local.is_org_level
+      error_message = "included_accounts / excluded_accounts apply only when integration_level is 'org'."
+    }
+  }
 }
 
 # ------------------------------------------------------------
