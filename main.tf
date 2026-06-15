@@ -41,10 +41,17 @@ locals {
   */
   subnet_map = { for s in local.subnet_pairs : s.map_key => s }
 
+  /* Accept any case for integration_level / accounts_filter.mode, but emit the
+  platform's canonical UPPER form: INTEGRATION_LEVEL is ORG/ACCOUNT and
+  ACCOUNT_FILTERS.FILTER_MODE is INCLUDE/EXCLUDE/ALL on the wire. Normalizing here
+  (mirroring the Azure module's upper(...) handling) keeps a lowercase input from
+  being rejected by the API enum once the integration resource is wired. */
+  is_org_level = upper(var.integration_level) == "ORG"
+
   /* Org-level only: let the scan role assume the per-account member read-roles
   (deployed across the org via StackSet) and the management-account org-read role.
   Empty for account-level so the scan policy is unchanged there. */
-  dspm_scan_org_statements = lower(var.integration_level) == "org" ? [
+  dspm_scan_org_statements = local.is_org_level ? [
     {
       Effect = "Allow"
       Action = "sts:AssumeRole"
@@ -131,20 +138,21 @@ resource "lacework_integration_aws_dspm" "lacework_cloud_account" {
   regions            = var.regions
 
   # Org-level fields. Uncomment once the lacework provider/go-sdk add the
-  # attributes (concurrent work). TF input -> go-sdk prop -> props.DSPM key:
-  #   integration_level  -> integrationLevel  -> INTEGRATION_LEVEL   (org|account)
+  # attributes (concurrent work). TF input -> go-sdk prop -> props.DSPM key.
+  # Values are normalized to the UPPER enums the API expects:
+  #   integration_level  -> integrationLevel  -> INTEGRATION_LEVEL   (ORG|ACCOUNT)
   #   management_account -> managementAccount -> MANAGEMENT_ACCOUNT
-  # integration_level  = var.integration_level
+  # integration_level  = upper(var.integration_level)
   # management_account = var.management_account
   #
   # accounts_filter is a nested block mirroring datastore_filters. It maps
-  #   accounts_filter{mode, accounts} -> accountFilters{filterMode, accounts}
-  #   -> props.DSPM.ACCOUNT_FILTERS{FILTER_MODE, ACCOUNTS}:
-  # dynamic "accounts_filter" {
+  #   accounts_filter{mode, accounts} -> account_filters{filter_mode, account_ids}
+  #   -> props.DSPM.ACCOUNT_FILTERS{FILTER_MODE, ACCOUNT_IDS}:
+  # dynamic "account_filters" {
   #   for_each = var.accounts_filter != null ? [var.accounts_filter] : []
   #   content {
-  #     mode     = accounts_filter.value.mode
-  #     accounts = accounts_filter.value.accounts
+  #     filter_mode = upper(account_filters.value.mode)  # INCLUDE | EXCLUDE | ALL
+  #     account_ids = account_filters.value.accounts
   #   }
   # }
 
@@ -214,9 +222,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "results_expiration" {
   rule {
     id     = "delete-results-after-7-days"
     status = "Enabled"
-    
+
     filter {
-    prefix = "results/"
+      prefix = "results/"
     }
     expiration {
       days = 7
@@ -225,9 +233,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "results_expiration" {
   rule {
     id     = "delete-scratch-after-1-day"
     status = "Enabled"
-    
+
     filter {
-    prefix = "scratch/"
+      prefix = "scratch/"
     }
     expiration {
       days = 1

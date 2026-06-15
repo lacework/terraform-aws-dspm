@@ -148,7 +148,7 @@ variable "lacework_aws_account_id" {
 variable "integration_level" {
   type        = string
   default     = "account"
-  description = "Scope of the DSPM integration: 'org' to scan the whole AWS organization, or 'account' for the single scanning account."
+  description = "Scope of the DSPM integration: 'org' to scan the whole AWS organization, or 'account' for the single scanning account. Case-insensitive; normalized to the UPPER form (ORG/ACCOUNT) the platform expects."
   validation {
     condition     = contains(["org", "account"], lower(var.integration_level))
     error_message = "integration_level must be 'org' or 'account'."
@@ -179,7 +179,7 @@ variable "accounts_filter" {
     accounts = optional(list(string), [])
   })
   default     = null
-  description = "Org-level only. Scopes which accounts an org scan covers, mirroring datastore_filters. `accounts` entries may be AWS account IDs and/or OU/root IDs (ou-…/r-…); OUs are expanded to their member accounts at scan time (so new accounts in a monitored OU are picked up automatically). mode='include' scans exactly that scope (skips whole-org discovery); 'exclude' scans the whole org except that scope; 'all' scans everything discovered."
+  description = "Org-level only. Scopes which accounts an org scan covers, mirroring datastore_filters. `accounts` entries may be AWS account IDs and/or OU/root IDs (ou-…/r-…); OUs are expanded to their member accounts at scan time (so new accounts in a monitored OU are picked up automatically). mode='include' scans exactly that scope (skips whole-org discovery); 'exclude' scans the whole org except that scope; 'all' scans everything discovered. mode is case-insensitive; normalized to the UPPER form (INCLUDE/EXCLUDE/ALL) the platform expects."
   validation {
     condition     = var.accounts_filter == null ? true : contains(["include", "exclude", "all"], lower(var.accounts_filter.mode))
     error_message = "accounts_filter.mode must be 'include', 'exclude', or 'all'."
