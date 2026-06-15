@@ -41,12 +41,23 @@ locals {
   */
   subnet_map = { for s in local.subnet_pairs : s.map_key => s }
 
-  /* Accept any case for integration_level / accounts_filter.mode, but emit the
-  platform's canonical UPPER form: INTEGRATION_LEVEL is ORG/ACCOUNT and
-  ACCOUNT_FILTERS.FILTER_MODE is INCLUDE/EXCLUDE/ALL on the wire. Normalizing here
-  (mirroring the Azure module's upper(...) handling) keeps a lowercase input from
-  being rejected by the API enum once the integration resource is wired. */
+  /* Accept any case for integration_level, but emit the platform's canonical UPPER
+  enum (ORG/ACCOUNT). Normalizing here (mirroring the Azure module's upper(...)
+  handling) keeps a lowercase input from being rejected by the API enum once the
+  integration resource is wired. */
   is_org_level = upper(var.integration_level) == "ORG"
+
+  /* Org-level account filter, derived from the two flat inputs (mirrors the Azure
+  module's included/excluded_subscriptions). included_accounts -> INCLUDE,
+  excluded_accounts -> EXCLUDE, neither -> null (scan the whole org). The two are
+  mutually exclusive (enforced by variable validation). */
+  account_filter = length(var.included_accounts) > 0 ? {
+    filter_mode = "INCLUDE"
+    account_ids = tolist(var.included_accounts)
+    } : (length(var.excluded_accounts) > 0 ? {
+      filter_mode = "EXCLUDE"
+      account_ids = tolist(var.excluded_accounts)
+  } : null)
 
   /* Org-level only: let the scan role assume the per-account member read-roles
   (deployed across the org via StackSet) and the management-account org-read role.
@@ -145,14 +156,14 @@ resource "lacework_integration_aws_dspm" "lacework_cloud_account" {
   # integration_level  = upper(var.integration_level)
   # management_account = var.management_account
   #
-  # accounts_filter is a nested block mirroring datastore_filters. It maps
-  #   accounts_filter{mode, accounts} -> account_filters{filter_mode, account_ids}
-  #   -> props.DSPM.ACCOUNT_FILTERS{FILTER_MODE, ACCOUNT_IDS}:
+  # account_filters carries the org scope. local.account_filter is derived from
+  # included_accounts / excluded_accounts (see locals) into the provider block:
+  #   -> account_filters{filter_mode, account_ids} -> props.DSPM.ACCOUNT_FILTERS{FILTER_MODE, ACCOUNT_IDS}
   # dynamic "account_filters" {
-  #   for_each = var.accounts_filter != null ? [var.accounts_filter] : []
+  #   for_each = local.account_filter != null ? [local.account_filter] : []
   #   content {
-  #     filter_mode = upper(account_filters.value.mode)  # INCLUDE | EXCLUDE | ALL
-  #     account_ids = account_filters.value.accounts
+  #     filter_mode = account_filters.value.filter_mode  # INCLUDE | EXCLUDE
+  #     account_ids = account_filters.value.account_ids
   #   }
   # }
 

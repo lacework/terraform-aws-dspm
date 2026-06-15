@@ -173,15 +173,28 @@ variable "org_read_role_name" {
   description = "Org-level only. Name of the org-enumeration role in the management account. The scan role is granted sts:AssumeRole on it for Organizations List*/Describe* during discovery."
 }
 
-variable "accounts_filter" {
-  type = object({
-    mode     = string
-    accounts = optional(list(string), [])
-  })
-  default     = null
-  description = "Org-level only. Scopes which accounts an org scan covers, mirroring datastore_filters. `accounts` entries may be AWS account IDs and/or OU/root IDs (ou-…/r-…); OUs are expanded to their member accounts at scan time (so new accounts in a monitored OU are picked up automatically). mode='include' scans exactly that scope (skips whole-org discovery); 'exclude' scans the whole org except that scope; 'all' scans everything discovered. mode is case-insensitive; normalized to the UPPER form (INCLUDE/EXCLUDE/ALL) the platform expects."
+variable "included_accounts" {
+  type        = set(string)
+  default     = []
+  description = "OPTIONAL: Org-level only. The explicit set of accounts to scan — AWS account IDs and/or OU/root IDs (ou-…/r-…), where OUs are expanded to their member accounts at scan time (so new accounts in a monitored OU are picked up automatically). When empty, all accounts in the org are scanned. Mutually exclusive with excluded_accounts."
+
   validation {
-    condition     = var.accounts_filter == null ? true : contains(["include", "exclude", "all"], lower(var.accounts_filter.mode))
-    error_message = "accounts_filter.mode must be 'include', 'exclude', or 'all'."
+    condition     = length(var.included_accounts) == 0 || upper(var.integration_level) == "ORG"
+    error_message = "included_accounts can only be specified when integration_level == 'org'."
+  }
+  validation {
+    condition     = length(var.included_accounts) == 0 || length(var.excluded_accounts) == 0
+    error_message = "included_accounts and excluded_accounts are mutually exclusive."
+  }
+}
+
+variable "excluded_accounts" {
+  type        = set(string)
+  default     = []
+  description = "OPTIONAL: Org-level only. Accounts to exclude from scanning — AWS account IDs and/or OU/root IDs (ou-…/r-…), expanded at scan time. All other accounts in the org are scanned. Mutually exclusive with included_accounts."
+
+  validation {
+    condition     = length(var.excluded_accounts) == 0 || upper(var.integration_level) == "ORG"
+    error_message = "excluded_accounts can only be specified when integration_level == 'org'."
   }
 }

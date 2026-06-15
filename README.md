@@ -38,13 +38,14 @@ See the [examples/](./examples/) directory for complete usage examples.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| accounts\_filter | Org-level only. Scopes which accounts an org scan covers, mirroring datastore\_filters. `accounts` entries may be AWS account IDs and/or OU/root IDs (ou-…/r-…); OUs are expanded to their member accounts at scan time (so new accounts in a monitored OU are picked up automatically). mode='include' scans exactly that scope (skips whole-org discovery); 'exclude' scans the whole org except that scope; 'all' scans everything discovered. mode is case-insensitive; normalized to the UPPER form (INCLUDE/EXCLUDE/ALL) the platform expects. | <pre>object({<br>    mode     = string<br>    accounts = optional(list(string), [])<br>  })</pre> | `null` | no |
 | additional\_environment\_variables | Optional list of additional environment variables passed to the scanner task. | <pre>list(object({<br>    name  = string<br>    value = string<br>  }))</pre> | `[]` | no |
 | additional\_trusted\_role\_arns | Additional IAM role ARNs allowed to assume the DSPM scan role (e.g., for testing outside of the scheduled ECS task). | `list(string)` | `[]` | no |
 | datastore\_filters | Filter which datastores are scanned. filter\_mode must be 'INCLUDE', 'EXCLUDE', or 'ALL'. datastore\_names is required for INCLUDE/EXCLUDE and must not be set for ALL. | <pre>object({<br>    filter_mode     = string<br>    datastore_names = optional(list(string), [])<br>  })</pre> | `null` | no |
 | ecs\_task\_cpu | CPU units for ECS task (256, 512, 1024, 2048, 4096) | `number` | `1024` | no |
 | ecs\_task\_memory | Memory for ECS task in MB (512, 1024, 2048, 4096, 8192, etc.) | `number` | `8192` | no |
+| excluded\_accounts | OPTIONAL: Org-level only. Accounts to exclude from scanning — AWS account IDs and/or OU/root IDs (ou-…/r-…), expanded at scan time. All other accounts in the org are scanned. Mutually exclusive with included\_accounts. | `set(string)` | `[]` | no |
 | global\_region | Region for global resources (S3 bucket, etc). Defaults to first region in var.regions. | `string` | `""` | no |
+| included\_accounts | OPTIONAL: Org-level only. The explicit set of accounts to scan — AWS account IDs and/or OU/root IDs (ou-…/r-…), where OUs are expanded to their member accounts at scan time (so new accounts in a monitored OU are picked up automatically). When empty, all accounts in the org are scanned. Mutually exclusive with excluded\_accounts. | `set(string)` | `[]` | no |
 | integration\_level | Scope of the DSPM integration: 'org' to scan the whole AWS organization, or 'account' for the single scanning account. Case-insensitive; normalized to the UPPER form (ORG/ACCOUNT) the platform expects. | `string` | `"account"` | no |
 | lacework\_aws\_account\_id | The Lacework AWS account that the IAM role will grant access. | `string` | `"434813966438"` | no |
 | lacework\_domain | Lacework domain for API server | `string` | `"lacework.net"` | no |
