@@ -22,7 +22,7 @@ See the [examples/](./examples/) directory for complete usage examples.
 |------|---------|
 | terraform | >= 1.3 |
 | aws | ~> 6.0 |
-| lacework | ~> 2.4 |
+| lacework | ~> 2.4, != 2.4.0 |
 | time | ~> 0.9 |
 
 ## Providers
@@ -30,7 +30,7 @@ See the [examples/](./examples/) directory for complete usage examples.
 | Name | Version |
 |------|---------|
 | aws | ~> 6.0 |
-| lacework | ~> 2.4 |
+| lacework | ~> 2.4, != 2.4.0 |
 | random | n/a |
 | time | ~> 0.9 |
 

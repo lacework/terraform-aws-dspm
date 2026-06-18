@@ -8,7 +8,7 @@ terraform {
     }
     lacework = {
       source  = "lacework/lacework"
-      version = "~> 2.4"
+      version = "~> 2.4, != 2.4.0"
     }
     time = {
       source  = "hashicorp/time"
