@@ -47,6 +47,16 @@ locals {
   integration resource is wired. */
   is_org_level = upper(var.integration_level) == "ORG"
 
+  # Org operational config the scanner reads from its env: the integration level and
+  # the role ARNs. The account filter is NOT here — it reaches the scanner via the
+  # config API (the integration resource's account_filters block below). Empty for
+  # account-level.
+  org_scanner_env = local.is_org_level ? [
+    { name = "AWS_INTEGRATION_LEVEL", value = upper(var.integration_level) },
+    { name = "AWS_ORG_READ_ROLE_ARN", value = "arn:aws:iam::${var.management_account}:role/${var.org_read_role_name}" },
+    { name = "AWS_MEMBER_ROLE_NAME", value = var.member_role_name },
+  ] : []
+
   /* Org-level account filter, derived from the two flat inputs (mirrors the Azure
   module's included/excluded_subscriptions). included_accounts -> INCLUDE,
   excluded_accounts -> EXCLUDE, neither -> null (scan the whole org). The two are
@@ -148,24 +158,22 @@ resource "lacework_integration_aws_dspm" "lacework_cloud_account" {
   storage_bucket_arn = local.storage_bucket_arn
   regions            = var.regions
 
-  # Org-level fields. Uncomment once the lacework provider/go-sdk add the
-  # attributes (concurrent work). TF input -> go-sdk prop -> props.DSPM key.
-  # Values are normalized to the UPPER enums the API expects:
-  #   integration_level  -> integrationLevel  -> INTEGRATION_LEVEL   (ORG|ACCOUNT)
-  #   management_account -> managementAccount -> MANAGEMENT_ACCOUNT
-  # integration_level  = upper(var.integration_level)
-  # management_account = var.management_account
-  #
-  # account_filters carries the org scope. local.account_filter is derived from
-  # included_accounts / excluded_accounts (see locals) into the provider block:
-  #   -> account_filters{filter_mode, account_ids} -> props.DSPM.ACCOUNT_FILTERS{FILTER_MODE, ACCOUNT_IDS}
-  # dynamic "account_filters" {
-  #   for_each = local.account_filter != null ? [local.account_filter] : []
-  #   content {
-  #     filter_mode = account_filters.value.filter_mode  # INCLUDE | EXCLUDE
-  #     account_ids = account_filters.value.account_ids
-  #   }
-  # }
+  # Org-level fields. Left null for account-level so an existing account integration
+  # tracks the backend value (integration_level is Computed in the provider) instead
+  # of forcing a PATCH. The account filter flows through account_filters → the config
+  # API, so the scanner reads scope from props rather than env.
+  #   integration_level  -> integrationLevel  (ORG|ACCOUNT)
+  #   management_account -> managementAccount
+  #   account_filters    -> props.DSPM.ACCOUNT_FILTERS{FILTER_MODE, ACCOUNT_IDS}
+  integration_level  = local.is_org_level ? upper(var.integration_level) : null
+  management_account = local.is_org_level ? var.management_account : null
+  dynamic "account_filters" {
+    for_each = local.is_org_level && local.account_filter != null ? [local.account_filter] : []
+    content {
+      filter_mode = account_filters.value.filter_mode # INCLUDE | EXCLUDE
+      account_ids = account_filters.value.account_ids
+    }
+  }
 
   credentials {
     external_id = local.external_id
@@ -833,7 +841,7 @@ resource "aws_ecs_task_definition" "scanner" {
           name  = "SECRET_ARN"
           value = aws_secretsmanager_secret.dspm_lacework_credentials[each.key].arn
         }
-      ], var.additional_environment_variables)
+      ], local.org_scanner_env, var.additional_environment_variables)
 
       logConfiguration = {
         logDriver = "awslogs"
