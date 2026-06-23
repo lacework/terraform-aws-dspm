@@ -128,9 +128,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "results_expiration" {
   rule {
     id     = "delete-results-after-7-days"
     status = "Enabled"
-    
+
     filter {
-    prefix = "results/"
+      prefix = "results/"
     }
     expiration {
       days = 7
@@ -139,9 +139,9 @@ resource "aws_s3_bucket_lifecycle_configuration" "results_expiration" {
   rule {
     id     = "delete-scratch-after-1-day"
     status = "Enabled"
-    
+
     filter {
-    prefix = "scratch/"
+      prefix = "scratch/"
     }
     expiration {
       days = 1
@@ -580,6 +580,19 @@ resource "aws_iam_role_policy" "dspm_scan" {
           "s3:GetObject",
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:DescribeKey",
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "kms:ViaService" = "s3.${each.key}.amazonaws.com"
+          }
+        }
       },
       # DynamoDB Cache Access (regional)
       {
