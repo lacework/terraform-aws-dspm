@@ -40,6 +40,101 @@ locals {
   }
   */
   subnet_map = { for s in local.subnet_pairs : s.map_key => s }
+
+  /* Accept any case for integration_level, but emit the platform's canonical UPPER
+  enum (ORG/ACCOUNT). Normalizing here (mirroring the Azure module's upper(...)
+  handling) keeps a lowercase input from being rejected by the API enum once the
+  integration resource is wired. */
+  is_org_level = upper(var.integration_level) == "ORG"
+
+  # Org operational config the scanner reads from its env: the integration level and
+  # the role ARNs. The account filter is NOT here — it reaches the scanner via the
+  # config API (the integration resource's account_filters block below). Empty for
+  # account-level.
+  org_scanner_env = local.is_org_level ? [
+    { name = "AWS_INTEGRATION_LEVEL", value = upper(var.integration_level) },
+    { name = "AWS_ORG_READ_ROLE_ARN", value = "arn:aws:iam::${var.management_account}:role/${var.org_read_role_name}" },
+    { name = "AWS_MEMBER_ROLE_NAME", value = var.member_role_name },
+  ] : []
+
+  /* Org-level account filter, derived from the two flat inputs (mirrors the Azure
+  module's included/excluded_subscriptions). included_accounts -> INCLUDE,
+  excluded_accounts -> EXCLUDE, neither -> null (scan the whole org). The two are
+  mutually exclusive (enforced by variable validation). */
+  account_filter = length(var.included_accounts) > 0 ? {
+    filter_mode = "INCLUDE"
+    account_ids = tolist(var.included_accounts)
+    } : (length(var.excluded_accounts) > 0 ? {
+      filter_mode = "EXCLUDE"
+      account_ids = tolist(var.excluded_accounts)
+  } : null)
+
+  /* Org-level only: let the scan role assume the per-account member read-roles
+  (deployed across the org via StackSet) and the management-account org-read role.
+  Empty for account-level so the scan policy is unchanged there. */
+  dspm_scan_org_statements = local.is_org_level ? [
+    {
+      Effect = "Allow"
+      Action = "sts:AssumeRole"
+      Resource = [
+        "arn:aws:iam::*:role/${var.member_role_name}",
+        "arn:aws:iam::*:role/${var.org_read_role_name}",
+      ]
+    }
+  ] : []
+
+  /* Canonical CloudFormation template for the per-account member read-role,
+  exposed via the member_role_cfn_template output. An org-level deployment deploys
+  it across the org with a SERVICE_MANAGED StackSet from the management account
+  (the StackSet resource itself can't live here — this module uses the single
+  scanning-account provider). Trust + permissions are baked from this module's
+  scan roles, so the role definition stays canonical to the module (like the
+  scan-role policy) rather than being re-specified per deployment. */
+  member_role_cfn_template = jsonencode({
+    AWSTemplateFormatVersion = "2010-09-09"
+    Description              = "FortiCNAPP DSPM member read-only S3 role"
+    Resources = {
+      DspmMemberRole = {
+        Type = "AWS::IAM::Role"
+        Properties = {
+          RoleName = var.member_role_name
+          AssumeRolePolicyDocument = {
+            Version = "2012-10-17"
+            Statement = [{
+              Effect    = "Allow"
+              Principal = { AWS = "arn:aws:iam::${var.scanning_account_id}:root" }
+              Action    = "sts:AssumeRole"
+              # Only this account's per-region DSPM scan roles may assume it.
+              Condition = {
+                ArnLike = {
+                  "aws:PrincipalArn" = "arn:aws:iam::${var.scanning_account_id}:role/${local.prefix}-scan-role-*-${local.suffix}"
+                }
+              }
+            }]
+          }
+          Policies = [{
+            PolicyName = "dspm-s3-read"
+            PolicyDocument = {
+              Version = "2012-10-17"
+              Statement = [{
+                Effect = "Allow"
+                Action = [
+                  "s3:ListAllMyBuckets",
+                  "s3:GetBucketLocation",
+                  "s3:GetBucketPublicAccessBlock",
+                  "s3:GetBucketPolicyStatus",
+                  "s3:GetBucketAcl",
+                  "s3:ListBucket",
+                  "s3:GetObject",
+                ]
+                Resource = "*"
+              }]
+            }
+          }]
+        }
+      }
+    }
+  })
 }
 
 resource "random_id" "suffix" {
@@ -62,6 +157,24 @@ resource "lacework_integration_aws_dspm" "lacework_cloud_account" {
   account_id         = var.scanning_account_id
   storage_bucket_arn = local.storage_bucket_arn
   regions            = var.regions
+
+  # Org-level fields. Left null for account-level so an existing account integration
+  # tracks the backend value (integration_level is Computed in the provider) instead
+  # of forcing a PATCH. The account filter flows through account_filters → the config
+  # API, so the scanner reads scope from props rather than env.
+  #   integration_level  -> integrationLevel  (ORG|ACCOUNT)
+  #   management_account -> managementAccount
+  #   account_filters    -> props.DSPM.ACCOUNT_FILTERS{FILTER_MODE, ACCOUNT_IDS}
+  integration_level  = local.is_org_level ? upper(var.integration_level) : null
+  management_account = local.is_org_level ? var.management_account : null
+  dynamic "account_filters" {
+    for_each = local.is_org_level && local.account_filter != null ? [local.account_filter] : []
+    content {
+      filter_mode = account_filters.value.filter_mode # INCLUDE | EXCLUDE
+      account_ids = account_filters.value.account_ids
+    }
+  }
+
   credentials {
     external_id = local.external_id
     role_arn    = aws_iam_role.dspm_cross_account_role.arn
@@ -74,6 +187,20 @@ resource "lacework_integration_aws_dspm" "lacework_cloud_account" {
     content {
       filter_mode     = datastore_filters.value.filter_mode
       datastore_names = length(datastore_filters.value.datastore_names) > 0 ? datastore_filters.value.datastore_names : null
+    }
+  }
+
+  # Account-filter guardrails. These live here (not in variable validation)
+  # because cross-variable references in validation blocks require Terraform 1.9+
+  # and this module supports >= 1.3.
+  lifecycle {
+    precondition {
+      condition     = length(var.included_accounts) == 0 || length(var.excluded_accounts) == 0
+      error_message = "included_accounts and excluded_accounts are mutually exclusive — set at most one."
+    }
+    precondition {
+      condition     = (length(var.included_accounts) == 0 && length(var.excluded_accounts) == 0) || local.is_org_level
+      error_message = "included_accounts / excluded_accounts apply only when integration_level is 'org'."
     }
   }
 }
@@ -567,7 +694,7 @@ resource "aws_iam_role_policy" "dspm_scan" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
+    Statement = concat([
       {
         Effect = "Allow"
         Action = [
@@ -656,7 +783,7 @@ resource "aws_iam_role_policy" "dspm_scan" {
           aws_ecs_task_definition.scanner[each.key].task_role_arn
         ]
       }
-    ]
+    ], local.dspm_scan_org_statements)
   })
 }
 
@@ -727,7 +854,7 @@ resource "aws_ecs_task_definition" "scanner" {
           name  = "SECRET_ARN"
           value = aws_secretsmanager_secret.dspm_lacework_credentials[each.key].arn
         }
-      ], var.additional_environment_variables)
+      ], local.org_scanner_env, var.additional_environment_variables)
 
       logConfiguration = {
         logDriver = "awslogs"

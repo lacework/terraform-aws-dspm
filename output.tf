@@ -43,6 +43,23 @@ output "dspm_scan_role_arns" {
   value       = { for r, role in aws_iam_role.dspm_scan : r => role.arn }
 }
 
+# Org-level: the member-role StackSet trusts the scan roles by ARN pattern
+# (arn:aws:iam::<scanning>:role/<prefix>-scan-role-*-<suffix>), built from these.
+output "resource_prefix" {
+  description = "Prefix used for scanner resource names (scan roles, etc.)"
+  value       = local.prefix
+}
+
+output "resource_suffix" {
+  description = "Random suffix appended to scanner resource names"
+  value       = local.suffix
+}
+
+output "member_role_cfn_template" {
+  description = "CloudFormation template (JSON) for the per-account member read-role. Deploy org-wide via a SERVICE_MANAGED StackSet from the management account; trust is scoped to this deployment's scan roles."
+  value       = local.member_role_cfn_template
+}
+
 output "ecs_task_role_arns" {
   description = "Map of region to ECS task role ARN"
   value       = { for r, role in aws_iam_role.ecs_task : r => role.arn }

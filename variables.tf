@@ -138,3 +138,53 @@ variable "lacework_aws_account_id" {
   default     = "434813966438"
   description = "The Lacework AWS account that the IAM role will grant access."
 }
+
+# ------------------------------------------------------------
+# Org-level integration (AWS).
+# Per the agreed per-cloud vernacular, AWS uses org/account here; Azure uses
+# tenant/subscription. The scanner normalizes both to ORG/ACCOUNT internally.
+# ------------------------------------------------------------
+
+variable "integration_level" {
+  type        = string
+  default     = "account"
+  description = "Scope of the DSPM integration: 'org' to scan the whole AWS organization, or 'account' for the single scanning account. Case-insensitive; normalized to the UPPER form (ORG/ACCOUNT) the platform expects."
+  validation {
+    condition     = contains(["org", "account"], lower(var.integration_level))
+    error_message = "integration_level must be 'org' or 'account'."
+  }
+}
+
+variable "management_account" {
+  type        = string
+  default     = ""
+  description = "Org-level only. The AWS Organizations management account ID, used to enumerate the org's accounts/OUs."
+}
+
+variable "member_role_name" {
+  type        = string
+  default     = "forticnapp-dspm-member-role"
+  description = "Org-level only. Name of the read-only role deployed in each monitored account (via StackSet). The scan role is granted sts:AssumeRole on arn:aws:iam::*:role/<member_role_name>."
+}
+
+variable "org_read_role_name" {
+  type        = string
+  default     = "forticnapp-dspm-org-read-role"
+  description = "Org-level only. Name of the org-enumeration role in the management account. The scan role is granted sts:AssumeRole on it for Organizations List*/Describe* during discovery."
+}
+
+variable "included_accounts" {
+  type    = set(string)
+  default = []
+  # NOTE: "org-level only" and "mutually exclusive with excluded_accounts" are
+  # enforced by lifecycle preconditions on the integration resource in main.tf —
+  # not variable validation, which can't reference other variables until TF 1.9
+  # (this module floors at >= 1.3).
+  description = "OPTIONAL: Org-level only. The explicit set of accounts to scan — AWS account IDs and/or OU/root IDs (ou-…/r-…), where OUs are expanded to their member accounts at scan time (so new accounts in a monitored OU are picked up automatically). When empty, all accounts in the org are scanned. Mutually exclusive with excluded_accounts."
+}
+
+variable "excluded_accounts" {
+  type        = set(string)
+  default     = []
+  description = "OPTIONAL: Org-level only. Accounts to exclude from scanning — AWS account IDs and/or OU/root IDs (ou-…/r-…), expanded at scan time. All other accounts in the org are scanned. Mutually exclusive with included_accounts."
+}
