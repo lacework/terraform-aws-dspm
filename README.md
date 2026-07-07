@@ -48,6 +48,7 @@ See the [examples/](./examples/) directory for complete usage examples.
 | lacework\_domain | Lacework domain for API server | `string` | `"lacework.net"` | no |
 | lacework\_hostname | Hostname for the Lacework account (e.g., my-tenant.lacework.net). If not provided, will use the URL associated with the default Lacework CLI profile. | `string` | `""` | no |
 | lacework\_integration\_name | Name of the DSPM integration in FortiCNAPP | `string` | `"aws-dspm"` | no |
+| manage\_s3\_public\_access\_block | Whether to manage the aws\_s3\_bucket\_public\_access\_block resource on the storage bucket. Set to false for environments whose SCPs deny s3:PutBucketPublicAccessBlock. AWS enables Block Public Access by default on new buckets, so the bucket remains private when this is disabled. | `bool` | `true` | no |
 | max\_file\_size\_mb | Maximum file size to scan, in megabytes. Valid values: 1 to 50. | `number` | `null` | no |
 | regions | List of AWS regions where DSPM scanners are deployed. | `list(string)` | n/a | yes |
 | resource\_prefix | Prefix for resource names (also used for S3 bucket name with account ID appended for uniqueness) | `string` | `"forticnapp-dspm"` | no |

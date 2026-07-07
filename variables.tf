@@ -133,6 +133,12 @@ variable "datastore_filters" {
   }
 }
 
+variable "manage_s3_public_access_block" {
+  type        = bool
+  default     = true
+  description = "Whether to manage the aws_s3_bucket_public_access_block resource on the storage bucket. Set to false for environments whose SCPs deny s3:PutBucketPublicAccessBlock. AWS enables Block Public Access by default on new buckets, so the bucket remains private when this is disabled."
+}
+
 variable "lacework_aws_account_id" {
   type        = string
   default     = "434813966438"
