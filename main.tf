@@ -161,7 +161,11 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "storage" {
 }
 
 # S3 Output Bucket Public Access Block
+# Optional: AWS enables Block Public Access by default on new buckets. This
+# resource can be disabled for environments whose SCPs deny
+# s3:PutBucketPublicAccessBlock (the bucket remains private via the default).
 resource "aws_s3_bucket_public_access_block" "storage" {
+  count  = var.manage_s3_public_access_block ? 1 : 0
   bucket = local.storage_bucket_id
 
   block_public_acls       = true
